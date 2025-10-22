@@ -1,0 +1,38 @@
+# Terraform ignore patterns
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*.bak
+*~
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.*
+.envrc
+
+# Certificate and key files (sensitive)
+*.pem
+*.key
+*.crt
+*.csr
+*.cert
+
+# Backup files
+*.backup

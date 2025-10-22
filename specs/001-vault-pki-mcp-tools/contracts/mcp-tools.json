@@ -1,0 +1,416 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Vault PKI MCP Tools",
+    "description": "Model Context Protocol tools for HashiCorp Vault PKI secrets engine operations. Provides capabilities to list PKI secrets engines and retrieve certificate hierarchies.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Vault MCP Server",
+      "url": "https://github.com/hashicorp/vault"
+    }
+  },
+  "servers": [],
+  "paths": {},
+  "components": {
+    "schemas": {
+      "PKISecretsEngine": {
+        "type": "object",
+        "description": "Represents a mounted PKI secrets engine in Vault",
+        "required": [
+          "path",
+          "type"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Mount path of the PKI secrets engine",
+            "example": "pki"
+          },
+          "type": {
+            "type": "string",
+            "description": "Secrets engine type, always 'pki'",
+            "enum": [
+              "pki"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the PKI mount",
+            "example": "Root CA for production environment"
+          },
+          "config": {
+            "type": "object",
+            "description": "Configuration details",
+            "properties": {
+              "default_lease_ttl": {
+                "type": "integer",
+                "description": "Default lease TTL in seconds"
+              },
+              "max_lease_ttl": {
+                "type": "integer",
+                "description": "Maximum lease TTL in seconds"
+              }
+            }
+          }
+        }
+      },
+      "Certificate": {
+        "type": "object",
+        "description": "X.509 certificate issued by a PKI secrets engine",
+        "required": [
+          "serial_number",
+          "subject_cn",
+          "issuer_cn",
+          "not_before",
+          "not_after",
+          "is_expired",
+          "is_revoked"
+        ],
+        "properties": {
+          "serial_number": {
+            "type": "string",
+            "description": "Unique serial number in colon-separated hex format",
+            "pattern": "^([0-9a-f]{2}:)+[0-9a-f]{2}$",
+            "example": "39:4e:fa:01:23:45:67:89"
+          },
+          "subject_cn": {
+            "type": "string",
+            "description": "Subject Common Name from certificate",
+            "example": "webserver.example.com"
+          },
+          "issuer_cn": {
+            "type": "string",
+            "description": "Issuer Common Name from certificate",
+            "example": "Intermediate CA"
+          },
+          "issuer_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Vault UUID reference to issuer entity",
+            "example": "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+          },
+          "not_before": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Certificate validity start date (ISO 8601)",
+            "example": "2024-01-01T00:00:00Z"
+          },
+          "not_after": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Certificate validity end date (ISO 8601)",
+            "example": "2025-01-01T00:00:00Z"
+          },
+          "is_expired": {
+            "type": "boolean",
+            "description": "Whether certificate is past validity period"
+          },
+          "is_revoked": {
+            "type": "boolean",
+            "description": "Whether certificate has been revoked"
+          },
+          "revocation_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When certificate was revoked (if applicable)",
+            "example": "2024-06-01T12:00:00Z"
+          }
+        }
+      },
+      "Issuer": {
+        "type": "object",
+        "description": "Certificate Authority (root or intermediate) in PKI hierarchy",
+        "required": [
+          "issuer_id",
+          "issuer_cn",
+          "issuer_type",
+          "ca_chain",
+          "is_active"
+        ],
+        "properties": {
+          "issuer_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Vault UUID for the issuer",
+            "example": "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+          },
+          "issuer_cn": {
+            "type": "string",
+            "description": "Common Name of the CA certificate",
+            "example": "Intermediate CA"
+          },
+          "issuer_type": {
+            "type": "string",
+            "enum": [
+              "root",
+              "intermediate"
+            ],
+            "description": "Type of certificate authority"
+          },
+          "parent_issuer_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of parent CA (null for root CAs)",
+            "example": "b2c3d4e5-6789-01bc-def0-234567890abc"
+          },
+          "ca_chain": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "PEM-encoded CA certificate chain"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether issuer is currently available in Vault"
+          }
+        }
+      },
+      "Warning": {
+        "type": "object",
+        "description": "Warning for permission errors or missing data",
+        "required": [
+          "type",
+          "resource",
+          "message"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "permission_denied",
+              "parse_error",
+              "missing_issuer",
+              "inactive_issuer"
+            ],
+            "description": "Type of warning"
+          },
+          "resource": {
+            "type": "string",
+            "description": "Resource path or identifier",
+            "example": "pki/cert/39:4e:fa:01:23"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable description",
+            "example": "Permission denied reading certificate details"
+          }
+        }
+      },
+      "HierarchyMetadata": {
+        "type": "object",
+        "description": "Summary statistics for certificate hierarchy",
+        "required": [
+          "total_certificates",
+          "expired_count",
+          "revoked_count",
+          "root_ca_count",
+          "intermediate_ca_count"
+        ],
+        "properties": {
+          "total_certificates": {
+            "type": "integer",
+            "description": "Total number of certificates",
+            "minimum": 0
+          },
+          "expired_count": {
+            "type": "integer",
+            "description": "Number of expired certificates",
+            "minimum": 0
+          },
+          "revoked_count": {
+            "type": "integer",
+            "description": "Number of revoked certificates",
+            "minimum": 0
+          },
+          "root_ca_count": {
+            "type": "integer",
+            "description": "Number of root CAs",
+            "minimum": 0
+          },
+          "intermediate_ca_count": {
+            "type": "integer",
+            "description": "Number of intermediate CAs",
+            "minimum": 0
+          }
+        }
+      },
+      "IntermediateIssuerGroup": {
+        "type": "object",
+        "description": "Group of certificates issued by an intermediate CA",
+        "required": [
+          "intermediate_cn",
+          "certificates"
+        ],
+        "properties": {
+          "intermediate_cn": {
+            "type": "string",
+            "description": "Intermediate CA common name"
+          },
+          "intermediate_issuer_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID or null if inactive"
+          },
+          "certificates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Certificate"
+            },
+            "description": "Leaf certificates"
+          }
+        }
+      },
+      "RootIssuerGroup": {
+        "type": "object",
+        "description": "Group of certificates under a root CA",
+        "required": [
+          "root_cn",
+          "intermediate_groups",
+          "direct_certificates"
+        ],
+        "properties": {
+          "root_cn": {
+            "type": "string",
+            "description": "Root CA common name"
+          },
+          "root_issuer_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID or null if inactive"
+          },
+          "intermediate_groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntermediateIssuerGroup"
+            },
+            "description": "Intermediate CA groups"
+          },
+          "direct_certificates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Certificate"
+            },
+            "description": "Certificates issued directly by root CA"
+          }
+        }
+      },
+      "CertificateHierarchy": {
+        "type": "object",
+        "description": "Complete certificate hierarchy grouped by root and intermediate CAs",
+        "required": [
+          "root_issuers",
+          "metadata"
+        ],
+        "properties": {
+          "root_issuers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RootIssuerGroup"
+            },
+            "description": "List of root CA groups"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Warning"
+            },
+            "description": "Warnings for permission errors or missing data"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/HierarchyMetadata"
+          }
+        }
+      }
+    }
+  },
+  "x-mcp-tools": {
+    "list_pki_secrets_engines": {
+      "description": "List all PKI secrets engines mounted in HashiCorp Vault. Returns only secrets engines with type 'pki', excluding all other types (kv, transit, database, etc.). Requires valid VAULT_ADDR and VAULT_TOKEN environment variables for authentication. Optionally supports VAULT_NAMESPACE for Vault Enterprise namespace isolation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "pki_engines"
+        ],
+        "properties": {
+          "pki_engines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PKISecretsEngine"
+            },
+            "description": "List of PKI secrets engines"
+          }
+        }
+      },
+      "errors": {
+        "VAULT_CONNECTION_ERROR": {
+          "description": "Failed to connect to Vault server. Check VAULT_ADDR environment variable and network connectivity.",
+          "http_code": 503
+        },
+        "AUTHENTICATION_ERROR": {
+          "description": "Vault authentication failed. Check VAULT_TOKEN environment variable and ensure token is valid.",
+          "http_code": 403
+        },
+        "PERMISSION_ERROR": {
+          "description": "Token lacks permission to list secrets engines. Requires 'sys/mounts' read capability.",
+          "http_code": 403
+        }
+      }
+    },
+    "list_certificates": {
+      "description": "List all certificates issued by a specified PKI secrets engine, organized hierarchically by root and intermediate CAs. Each certificate includes subject CN, issuer CN, expiration status, and revocation status. Supports partial results with warnings when permission errors occur. Optionally supports VAULT_NAMESPACE for Vault Enterprise namespace isolation.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "pki_mount_path"
+        ],
+        "properties": {
+          "pki_mount_path": {
+            "type": "string",
+            "description": "Mount path of the PKI secrets engine (e.g., 'pki', 'pki_int'). Do not include leading or trailing slashes.",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "example": "pki"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "hierarchy"
+        ],
+        "properties": {
+          "hierarchy": {
+            "$ref": "#/components/schemas/CertificateHierarchy"
+          }
+        }
+      },
+      "errors": {
+        "VAULT_CONNECTION_ERROR": {
+          "description": "Failed to connect to Vault server. Check VAULT_ADDR environment variable and network connectivity.",
+          "http_code": 503
+        },
+        "AUTHENTICATION_ERROR": {
+          "description": "Vault authentication failed. Check VAULT_TOKEN environment variable and ensure token is valid.",
+          "http_code": 403
+        },
+        "PKI_MOUNT_NOT_FOUND": {
+          "description": "The specified PKI mount path does not exist or is not of type 'pki'.",
+          "http_code": 404
+        },
+        "PERMISSION_ERROR": {
+          "description": "Token lacks permission to list or read certificates at the specified path. Requires read capability on '<pki>/certs' and '<pki>/cert/*'.",
+          "http_code": 403
+        },
+        "INVALID_MOUNT_PATH": {
+          "description": "Mount path contains invalid characters or format. Use alphanumeric, underscore, and hyphen only.",
+          "http_code": 400
+        }
+      }
+    }
+  }
+}
