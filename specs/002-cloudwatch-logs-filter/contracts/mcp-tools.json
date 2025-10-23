@@ -1,0 +1,661 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AWS CloudWatch Logs Filter MCP Tools",
+    "description": "Model Context Protocol tools for filtering and querying AWS CloudWatch log streams",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Vault MCP Server",
+      "url": "https://github.com/example/vault-mcp-server"
+    }
+  },
+  "components": {
+    "schemas": {
+      "LogEvent": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "message",
+          "log_stream_name"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Event timestamp in ISO 8601 format"
+          },
+          "message": {
+            "type": "string",
+            "description": "Raw log message content",
+            "minLength": 1
+          },
+          "log_stream_name": {
+            "type": "string",
+            "description": "Source log stream identifier"
+          },
+          "log_level": {
+            "type": "string",
+            "enum": [
+              "ERROR",
+              "WARN",
+              "INFO",
+              "DEBUG"
+            ],
+            "description": "Extracted log level"
+          },
+          "event_id": {
+            "type": "string",
+            "description": "CloudWatch event ID for deduplication"
+          },
+          "ingestion_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "CloudWatch ingestion timestamp"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Additional parsed fields from log content"
+          }
+        }
+      },
+      "FilterCriteria": {
+        "type": "object",
+        "required": [
+          "log_group_name"
+        ],
+        "properties": {
+          "log_group_name": {
+            "type": "string",
+            "description": "CloudWatch log group name",
+            "pattern": "^[a-zA-Z0-9_/.-]+$"
+          },
+          "log_stream_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Specific log streams to query (omit for all streams)"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Filter events after this timestamp"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Filter events before this timestamp"
+          },
+          "text_pattern": {
+            "type": "string",
+            "description": "Simple text search pattern"
+          },
+          "regex_pattern": {
+            "type": "string",
+            "description": "Regular expression pattern for advanced matching"
+          },
+          "log_levels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ERROR",
+                "WARN",
+                "INFO",
+                "DEBUG"
+              ]
+            },
+            "description": "Log levels to include in results"
+          },
+          "max_events": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000,
+            "default": 1000,
+            "description": "Maximum number of events to return"
+          },
+          "start_from_head": {
+            "type": "boolean",
+            "default": true,
+            "description": "Search direction (true=oldest first, false=newest first)"
+          }
+        }
+      },
+      "QueryResults": {
+        "type": "object",
+        "required": [
+          "events",
+          "total_events",
+          "query_metadata",
+          "source_information",
+          "statistics"
+        ],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogEvent"
+            },
+            "description": "Filtered log events"
+          },
+          "total_events": {
+            "type": "integer",
+            "description": "Total events found (may exceed returned count)"
+          },
+          "query_metadata": {
+            "type": "object",
+            "required": [
+              "query_id",
+              "execution_time_ms",
+              "start_time",
+              "end_time"
+            ],
+            "properties": {
+              "query_id": {
+                "type": "string",
+                "description": "Unique identifier for this query"
+              },
+              "execution_time_ms": {
+                "type": "number",
+                "description": "Query execution duration in milliseconds"
+              },
+              "start_time": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Query start timestamp"
+              },
+              "end_time": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Query completion timestamp"
+              },
+              "next_token": {
+                "type": "string",
+                "description": "Token for retrieving next page of results"
+              },
+              "has_more_events": {
+                "type": "boolean",
+                "description": "Whether additional events are available"
+              }
+            }
+          },
+          "source_information": {
+            "type": "object",
+            "required": [
+              "log_group_name",
+              "log_streams_queried"
+            ],
+            "properties": {
+              "log_group_name": {
+                "type": "string",
+                "description": "Source log group name"
+              },
+              "log_streams_queried": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "List of log streams included in query"
+              }
+            }
+          },
+          "statistics": {
+            "type": "object",
+            "required": [
+              "events_scanned",
+              "events_matched",
+              "api_calls_made"
+            ],
+            "properties": {
+              "events_scanned": {
+                "type": "integer",
+                "description": "Total events examined during query"
+              },
+              "events_matched": {
+                "type": "integer",
+                "description": "Events matching filter criteria"
+              },
+              "api_calls_made": {
+                "type": "integer",
+                "description": "Number of CloudWatch API calls executed"
+              }
+            }
+          },
+          "issues": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Non-fatal errors encountered"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Warnings about query execution"
+              }
+            }
+          }
+        }
+      },
+      "LogStreamInfo": {
+        "type": "object",
+        "required": [
+          "log_stream_name",
+          "log_group_name",
+          "creation_time"
+        ],
+        "properties": {
+          "log_stream_name": {
+            "type": "string",
+            "description": "Log stream name"
+          },
+          "log_group_name": {
+            "type": "string",
+            "description": "Parent log group name"
+          },
+          "creation_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Stream creation timestamp"
+          },
+          "last_event_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Most recent event timestamp"
+          },
+          "last_ingestion_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Most recent ingestion timestamp"
+          },
+          "upload_sequence_token": {
+            "type": "string",
+            "description": "Current sequence token"
+          },
+          "arn": {
+            "type": "string",
+            "description": "Stream ARN"
+          },
+          "stored_bytes": {
+            "type": "integer",
+            "description": "Approximate size in bytes"
+          }
+        }
+      },
+      "MCPResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates operation success status"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable operation result description"
+          },
+          "data": {
+            "type": "object",
+            "description": "Operation-specific response data"
+          },
+          "error_code": {
+            "type": "string",
+            "description": "Error classification code (if success=false)"
+          },
+          "details": {
+            "type": "object",
+            "description": "Additional error or success details"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/mcp/tools/filter_logs": {
+      "post": {
+        "summary": "Filter CloudWatch log events",
+        "description": "Filter log events from CloudWatch log streams based on text patterns, time ranges, and log levels",
+        "operationId": "filter_logs",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FilterCriteria"
+              },
+              "example": {
+                "log_group_name": "/aws/lambda/my-function",
+                "text_pattern": "ERROR",
+                "start_time": "2023-10-22T10:00:00Z",
+                "end_time": "2023-10-22T11:00:00Z",
+                "max_events": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully filtered log events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/MCPResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/QueryResults"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "message": "Found 25 events matching filter criteria",
+                  "data": {
+                    "events": [
+                      {
+                        "timestamp": "2023-10-22T10:30:45Z",
+                        "message": "ERROR: Failed to process request",
+                        "log_stream_name": "2023/10/22/[$LATEST]abc123",
+                        "log_level": "ERROR",
+                        "metadata": {}
+                      }
+                    ],
+                    "total_events": 25,
+                    "query_metadata": {
+                      "query_id": "q_12345",
+                      "execution_time_ms": 2500,
+                      "start_time": "2023-10-22T10:30:44Z",
+                      "end_time": "2023-10-22T10:30:46Z",
+                      "has_more_events": false
+                    },
+                    "source_information": {
+                      "log_group_name": "/aws/lambda/my-function",
+                      "log_streams_queried": [
+                        "2023/10/22/[$LATEST]abc123"
+                      ]
+                    },
+                    "statistics": {
+                      "events_scanned": 1000,
+                      "events_matched": 25,
+                      "api_calls_made": 3
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid filter criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Invalid filter criteria",
+                  "error_code": "INVALID_PARAMETERS",
+                  "details": {
+                    "field": "log_group_name",
+                    "issue": "Log group name is required"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AWS authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "AWS authentication failed",
+                  "error_code": "AUTH_FAILED",
+                  "details": {
+                    "aws_error": "InvalidUserID.NotFound"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Log group or stream not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Log group not found",
+                  "error_code": "RESOURCE_NOT_FOUND",
+                  "details": {
+                    "resource": "/aws/lambda/nonexistent-function"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "AWS API rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "AWS API rate limit exceeded",
+                  "error_code": "RATE_LIMITED",
+                  "details": {
+                    "retry_after": 30
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Internal server error during log filtering",
+                  "error_code": "INTERNAL_ERROR",
+                  "details": {
+                    "error_id": "err_67890"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/tools/list_log_groups": {
+      "get": {
+        "summary": "List available CloudWatch log groups",
+        "description": "Retrieve a list of CloudWatch log groups accessible with current credentials",
+        "operationId": "list_log_groups",
+        "parameters": [
+          {
+            "name": "prefix",
+            "in": "query",
+            "description": "Filter log groups by name prefix",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of log groups to return",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved log groups",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/MCPResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "log_groups": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "log_group_name": {
+                                    "type": "string"
+                                  },
+                                  "creation_time": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "retention_in_days": {
+                                    "type": "integer"
+                                  },
+                                  "stored_bytes": {
+                                    "type": "integer"
+                                  },
+                                  "arn": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "total_count": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/tools/list_log_streams": {
+      "post": {
+        "summary": "List log streams in a CloudWatch log group",
+        "description": "Retrieve log streams from a specific CloudWatch log group",
+        "operationId": "list_log_streams",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "log_group_name"
+                ],
+                "properties": {
+                  "log_group_name": {
+                    "type": "string",
+                    "description": "CloudWatch log group name"
+                  },
+                  "prefix": {
+                    "type": "string",
+                    "description": "Filter streams by name prefix"
+                  },
+                  "order_by": {
+                    "type": "string",
+                    "enum": [
+                      "LogStreamName",
+                      "LastEventTime"
+                    ],
+                    "default": "LastEventTime",
+                    "description": "Sort order for streams"
+                  },
+                  "descending": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Sort in descending order"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 20,
+                    "description": "Maximum number of streams to return"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved log streams",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/MCPResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "log_streams": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/LogStreamInfo"
+                              }
+                            },
+                            "total_count": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -66,18 +66,24 @@ A user needs to search across multiple CloudWatch log streams simultaneously to 
 
 ### Functional Requirements
 
-- **FR-001**: System MUST connect to AWS CloudWatch Logs using AWS credentials
+- **FR-001**: System MUST connect to AWS CloudWatch Logs using AWS IAM role-based authentication with fallback to environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 - **FR-002**: System MUST retrieve log events from specified CloudWatch log streams
 - **FR-003**: System MUST filter log events based on text pattern matching
 - **FR-004**: System MUST filter log events based on time range criteria
 - **FR-005**: System MUST support log level filtering (ERROR, WARN, INFO, DEBUG)
 - **FR-006**: System MUST support regular expression pattern matching for advanced filtering
-- **FR-007**: System MUST return filtered results in a structured, readable format
-- **FR-008**: System MUST handle pagination for large result sets
-- **FR-009**: System MUST provide error handling for invalid filters or AWS connectivity issues
+- **FR-007**: System MUST return filtered results as JSON objects with structured fields (timestamp, level, message, metadata)
+- **FR-008**: System MUST handle pagination for large result sets with 100 events per batch
+- **FR-009**: System MUST provide error handling for invalid filters or AWS connectivity issues with exponential backoff and 3 retry attempts
 - **FR-010**: System MUST support filtering across multiple log streams
-- **FR-011**: System MUST respect AWS API rate limits and implement appropriate throttling
+- **FR-011**: System MUST respect AWS API rate limits and implement appropriate throttling with exponential backoff
 - **FR-012**: System MUST validate filter parameters before executing queries
+
+### Non-Functional Requirements
+
+- **NFR-001**: CloudWatch API requests MUST timeout after 60 seconds
+- **NFR-002**: System MUST handle concurrent requests without performance degradation
+- **NFR-003**: Filter operations MUST complete within 10 seconds for streams with up to 10,000 events
 
 ### Key Entities
 
@@ -95,6 +101,16 @@ A user needs to search across multiple CloudWatch log streams simultaneously to 
 - **SC-003**: Users can successfully connect to and query any accessible CloudWatch log stream on first attempt
 - **SC-004**: System handles concurrent filtering requests from multiple users without performance degradation
 - **SC-005**: 95% of filter operations complete successfully without errors or timeouts
+
+## Clarifications
+
+### Session 2025-10-22
+
+- Q: What authentication method should the MCP tool use to connect to AWS CloudWatch Logs? → A: AWS IAM role-based authentication with fallback to environment variables
+- Q: What output format should the MCP tool use to return filtered log events? → A: JSON objects with structured fields (timestamp, level, message, metadata)
+- Q: What should be the default pagination limit for large result sets? → A: 100 events per batch (fixed)
+- Q: What retry strategy should be used for AWS API failures? → A: Exponential backoff with 3 retry attempts
+- Q: What should be the timeout value for CloudWatch API requests? → A: 60 seconds
 
 ## Assumptions
 

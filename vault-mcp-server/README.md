@@ -1,265 +1,121 @@
-# Vault PKI MCP Server
+# Vault MCP Server
 
-Model Context Protocol server for HashiCorp Vault PKI secrets engine operations.
+A Model Context Protocol (MCP) server that provides tools for interacting with HashiCorp Vault PKI engines and AWS CloudWatch Logs. This server offers comprehensive certificate management and log analysis capabilities through a standardized MCP interface.
 
-## Overview
+## Features
 
-This MCP server provides tool functions to interact with HashiCorp Vault PKI secrets engines:
+### Vault PKI Tools
+- **List PKI Engines**: Discover and enumerate PKI secrets engines
+- **List Certificates**: Retrieve certificate hierarchies with detailed metadata
+- **Certificate Analysis**: Expiration tracking, revocation status, and hierarchy mapping
 
-1. **List PKI Secrets Engines**: Discover all PKI mount points in your Vault instance
-2. **List Certificates**: View certificate hierarchies organized by root and intermediate CAs, with expiration and revocation status
-
-## Prerequisites
-
-- **Python**: Version 3.11 or higher
-- **HashiCorp Vault**: Version 1.12.0+ with at least one PKI secrets engine enabled
-- **Vault Token**: Valid authentication token with appropriate permissions
-
-### Required Vault Permissions
-
-Your Vault token must have the following capabilities:
-
-```hcl
-# List all secrets engines
-path "sys/mounts" {
-  capabilities = ["read"]
-}
-
-# List certificates in PKI mount
-path "pki/certs" {
-  capabilities = ["list"]
-}
-
-# Read certificate details
-path "pki/cert/*" {
-  capabilities = ["read"]
-}
-
-# Read issuer details
-path "pki/issuer/*" {
-  capabilities = ["read"]
-}
-```
-
-Replace `pki` with your actual PKI mount path(s).
+### CloudWatch Logs Tools  
+- **Filter Logs**: Advanced log filtering with pattern matching, time ranges, and log level detection
+- **List Log Groups**: Discover available CloudWatch log groups with metadata
+- **List Log Streams**: Browse log streams within groups with sorting and filtering
 
 ## Installation
 
-### 1. Clone Repository
+### Prerequisites
+- Python 3.11+
+- Valid Vault token and server access
+- AWS credentials (for CloudWatch features)
 
+### Dependencies
 ```bash
-git clone <repository-url>
-cd vault-mcp-server
+pip install fastmcp hvac cryptography boto3 botocore
 ```
 
-### 2. Install Dependencies
+## Configuration
 
-```bash
-# Using uv (recommended)
-uv sync
+### Environment Variables
 
-# Install with development dependencies
-uv sync --dev
-```
+#### Required (Vault)
+- `VAULT_ADDR`: Vault server URL (e.g., `https://vault.example.com:8200`)
+- `VAULT_TOKEN`: Valid Vault authentication token
 
-### 3. Set Environment Variables
+#### Optional (Vault)
+- `VAULT_SKIP_VERIFY`: Skip TLS verification (default: false, dev only)
+- `VAULT_NAMESPACE`: Vault Enterprise namespace
+- `MCP_SERVER_HOST`: MCP server host (default: localhost)
+- `MCP_SERVER_PORT`: MCP server port (default: 8000)
 
-```bash
-export VAULT_ADDR="https://vault.example.com:8200"
-export VAULT_TOKEN="hvs.CAES..."
-
-# Optional: Skip TLS verification (development only - NOT for production)
-export VAULT_SKIP_VERIFY="false"
-```
-
-### 4. Verify Connection
-
-```bash
-python -c "import hvac; client = hvac.Client(); print('Vault Status:', client.sys.read_health_status())"
-```
-
-Expected output: `Vault Status: {'initialized': True, 'sealed': False, ...}`
+#### Optional (AWS CloudWatch)
+- `AWS_ACCESS_KEY_ID`: AWS access key (or use IAM roles/profiles)
+- `AWS_SECRET_ACCESS_KEY`: AWS secret key  
+- `AWS_DEFAULT_REGION`: AWS region (default: us-east-1)
+- `AWS_PROFILE`: AWS profile name for credentials
 
 ## Usage
 
-### Starting the MCP Server
-
+### Starting the Server
 ```bash
-# Run the MCP server
 python main.py
-
-# With custom configuration (if supported)
-python main.py --host 0.0.0.0 --port 8080
 ```
 
-### Available Tools
+### MCP Tools
 
-#### 1. list_pki_secrets_engines
+#### Vault PKI Tools
+- `list_pki_engines`: List all PKI secrets engines
+- `list_certificates`: Get certificate details from a PKI engine
 
-List all PKI secrets engines in your Vault instance.
+#### CloudWatch Tools
+- `filter_logs`: Filter log events with advanced criteria
+- `list_log_groups`: List available CloudWatch log groups
+- `list_log_streams`: List log streams within a group
 
-**Parameters**: None
+### Example Requests
 
-**Example Response**:
+#### Filter CloudWatch Logs
 ```json
 {
-  "pki_engines": [
-    {
-      "path": "pki",
-      "type": "pki",
-      "description": "Root CA for production environment",
-      "config": {
-        "default_lease_ttl": 86400,
-        "max_lease_ttl": 31536000
-      }
-    }
-  ]
-}
-```
-
-#### 2. list_certificates
-
-View all certificates from a PKI engine, grouped by CA hierarchy.
-
-**Parameters**:
-- `pki_mount_path` (required): Mount path of the PKI secrets engine (e.g., "pki")
-
-**Example Response**:
-```json
-{
-  "hierarchy": {
-    "root_issuers": [
-      {
-        "root_cn": "Root CA",
-        "intermediate_groups": [
-          {
-            "intermediate_cn": "Intermediate CA",
-            "certificates": [
-              {
-                "serial_number": "39:4e:fa:01:23:45:67:89",
-                "subject_cn": "webserver.example.com",
-                "is_expired": false,
-                "is_revoked": false
-              }
-            ]
-          }
-        ]
-      }
-    ],
-    "metadata": {
-      "total_certificates": 1,
-      "expired_count": 0,
-      "revoked_count": 0
-    }
+  "tool": "filter_logs",
+  "arguments": {
+    "log_group_name": "/aws/lambda/my-function",
+    "text_pattern": "ERROR",
+    "start_time": "2023-10-22T10:00:00Z",
+    "max_events": 100
   }
 }
 ```
 
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `VAULT_ADDR` | Yes | None | Vault server URL (e.g., `https://vault.example.com:8200`) |
-| `VAULT_TOKEN` | Yes | None | Vault authentication token |
-| `VAULT_SKIP_VERIFY` | No | `false` | Skip TLS certificate verification (dev only) |
-| `VAULT_NAMESPACE` | No | None | Vault Enterprise namespace |
+#### List PKI Certificates
+```json
+{
+  "tool": "list_certificates", 
+  "arguments": {
+    "pki_mount_path": "pki"
+  }
+}
+```
 
 ## Development
 
-### Install Development Dependencies
+### Architecture
+```
+src/
+├── models/          # Data models
+│   ├── certificate.py    # Certificate structures
+│   ├── pki_engine.py     # PKI engine models
+│   └── cloudwatch.py     # CloudWatch models
+├── services/        # Business logic
+│   ├── vault_client.py        # Vault API client
+│   ├── cloudwatch_client.py   # AWS CloudWatch client
+│   ├── pattern_matcher.py     # Log pattern matching
+│   └── log_filter.py          # Log filtering orchestration
+└── tools/           # MCP tool implementations
+    ├── list_certificates.py
+    ├── list_pki_engines.py
+    ├── filter_logs.py
+    ├── list_log_groups.py
+    └── list_log_streams.py
+```
 
+### Testing
 ```bash
-uv sync --dev
+# Install test dependencies
+pip install moto pytest
+
+# Run tests
+pytest tests/
 ```
-
-### Run Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=src --cov-report=html
-
-# Run specific test file
-pytest tests/unit/test_vault_client.py
-```
-
-### Code Formatting
-
-```bash
-# Format code with black
-black .
-
-# Lint with ruff
-ruff check .
-
-# Auto-fix linting issues
-ruff check --fix .
-```
-
-## Troubleshooting
-
-### Error: "Vault connection failed"
-
-**Cause**: Cannot reach Vault server
-
-**Solution**:
-1. Verify VAULT_ADDR: `echo $VAULT_ADDR`
-2. Test connectivity: `curl -k $VAULT_ADDR/v1/sys/health`
-3. Check firewall and network access
-
-### Error: "Authentication failed"
-
-**Cause**: Invalid or expired VAULT_TOKEN
-
-**Solution**:
-1. Check token: `vault token lookup`
-2. Renew token: `vault token renew`
-3. Create new token with correct policies
-
-### Error: "Permission denied"
-
-**Cause**: Token lacks required capabilities
-
-**Solution**:
-1. Review required permissions in Prerequisites section
-2. Update Vault policy to grant necessary capabilities
-3. Attach policy to token or create new token
-
-## Security Best Practices
-
-1. **Least Privilege**: Grant Vault tokens only minimum required capabilities
-2. **Token Rotation**: Regularly rotate VAULT_TOKEN and use short TTLs
-3. **TLS Verification**: Always enable TLS verification in production (`VAULT_SKIP_VERIFY=false`)
-4. **Secrets Management**: Never hardcode tokens; use environment variables or secrets managers
-5. **Audit Logging**: Enable Vault audit logs to track certificate access
-6. **Network Isolation**: Run MCP server on internal network, not exposed to public internet
-
-## Project Structure
-
-```
-vault-mcp-server/
-├── main.py                    # MCP server entry point
-├── pyproject.toml            # Dependencies and configuration
-├── README.md                 # This file
-├── src/
-│   ├── tools/                # MCP tool definitions
-│   ├── services/             # Business logic (Vault client, parsers)
-│   └── models/               # Pydantic data models
-└── tests/
-    ├── unit/                 # Unit tests
-    └── integration/          # Integration tests
-```
-
-## License
-
-[Your License Here]
-
-## Support
-
-For issues and questions:
-- **Documentation**: See `/specs/001-vault-pki-mcp-tools/` for detailed specifications
-- **Issue Tracker**: [Link to issue tracker]
-- **Vault API Docs**: https://developer.hashicorp.com/vault/api-docs/secret/pki
-- **MCP Protocol**: https://modelcontextprotocol.io/docs

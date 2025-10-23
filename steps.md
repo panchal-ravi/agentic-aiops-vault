@@ -47,7 +47,7 @@ vault write pki_int/roles/example-dot-com \
 
 
 ## Request certificates
-vault write pki_int/issue/example-dot-com common_name="test.example.com" ttl="24h"
+vault write pki_int/issue/example-dot-com common_name="api.example.com" ttl="720h"
 
 vault write pki_int/revoke serial_number="61:f6:7a:dd:71:d2:1c:c0:40:2e:58:cd:ef:d9:cb:6e:15:38:10:08"
 
@@ -88,7 +88,7 @@ curl -s\
   -H "X-Vault-Token: $VAULT_TOKEN" \
   -H "X-Vault-Namespace: admin" \
   -H "X-Vault-Request: true" \
-  $VAULT_ADDR/v1/pki_int/cert/61:f6:7a:dd:71:d2:1c:c0:40:2e:58:cd:ef:d9:cb:6e:15:38:10:08 | jq .
+  $VAULT_ADDR/v1/pki_int/cert/61:f6:7a:dd:71:d2:1c:c0:40:2e:58:cd:ef:d9:cb:6e:15:38:10:08 | jq ".data.certificate" -r | openssl x509 -text -noout
 
 
 
@@ -97,4 +97,20 @@ curl -s \
   -H "X-Vault-Token: $VAULT_TOKEN" \
   -H "X-Vault-Namespace: admin" \
   -H "X-Vault-Request: true" \
-  $VAULT_ADDR/v1/pki_int/issuer/8eedc725-2f47-941c-1b28-e200211b4e0e | jq .
+  $VAULT_ADDR/v1/pki_int/issuer/342cc192-ca6c-a41e-04cc-81499b21d49d | 
+
+
+curl -s \
+  -H "X-Vault-Token: $VAULT_TOKEN" \
+  -H "X-Vault-Namespace: admin" \
+  -H "X-Vault-Request: true" \
+  -X POST \
+  -d '{"input": "61:f6:7a:dd:71:d2:1c:c0:40:2e:58:cd:ef:d9:cb:6e:15:38:10:08"}' \
+  $VAULT_ADDR/v1/sys/audit-hash/hcp-main-audit
+
+
+{ ($.request.operation = "update") && ($.request.path = "pki_int/issue/*") && ($.request.data.common_name = "hmac-sha256:8fb636b6bdda464c01bf791dbf06e67ac47a4345f79ff8acecbb9e6b6e1287fe")  && ($.response.data.expiration > 0) }
+
+{ ($.request.operation = "update") && ($.request.path = "pki_int/issue/*") && ($.request.data.common_name = "hmac-sha256:77cb73cbefd1788d7196df8f83fe9923cf850b869030d96697d85860ccbbf9d5")  && ($.auth.entity_id != "") && ($.response.data.expiration != "__CLOUDWATCH_KEY_EXISTS_CHECK_PLACEHOLDER__") }
+
+{ (($.request.path = "pki_int/revoke") && ($.request.data.serial_number = "hmac-sha256:77457198eb4b4ffbecc499d0c6db0e9cce4020b994e5ef383e622e94a63877f8")) || (($.request.path = "pki_int/issue/*") && ($.response.data.serial_number = "hmac-sha256:77457198eb4b4ffbecc499d0c6db0e9cce4020b994e5ef383e622e94a63877f8")) && ($.response.data.expiration != "__CLOUDWATCH_KEY_EXISTS_CHECK_PLACEHOLDER__") }

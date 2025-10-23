@@ -27,6 +27,7 @@ ENV/
 env/
 .env
 .env.*
+.envrc
 
 # Testing
 .pytest_cache/

@@ -16,6 +16,7 @@ load_dotenv()
 
 # Validate required environment variables on startup
 REQUIRED_ENV_VARS = ["VAULT_ADDR", "VAULT_TOKEN"]
+OPTIONAL_AWS_VARS = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_DEFAULT_REGION"]
 
 
 def validate_environment() -> None:
@@ -36,6 +37,13 @@ def validate_environment() -> None:
         print("  VAULT_NAMESPACE   - Vault Enterprise namespace")
         print("  MCP_SERVER_HOST   - MCP server host (default: localhost)")
         print("  MCP_SERVER_PORT   - MCP server port (default: 8000)")
+        print("\nOptional AWS CloudWatch environment variables:")
+        print("  AWS_ACCESS_KEY_ID     - AWS access key (or use IAM roles/profiles)")
+        print("  AWS_SECRET_ACCESS_KEY - AWS secret key")
+        print("  AWS_DEFAULT_REGION    - AWS region (default: us-east-1)")
+        print("  AWS_PROFILE           - AWS profile name for credentials")
+        print("  AWS_LOG_GROUP_NAME    - CloudWatch log group name for filtering")
+        print("  AWS_LOG_STREAM_NAMES  - Comma-separated log stream names (optional)")
         sys.exit(1)
 
 
@@ -50,16 +58,21 @@ async def main():
     validate_environment()
 
     # Initialize FastMCP server with async transport
-    mcp = FastMCP("Vault PKI MCP Server")
+    mcp = FastMCP("Vault PKI & CloudWatch MCP Server")
 
     # Register MCP tools
+    from src.tools.filter_logs import register_filter_logs_tool
     from src.tools.list_certificates import register_list_certificates_tool
     from src.tools.list_pki_engines import register_list_pki_engines_tool
 
+    # Register Vault PKI tools
     register_list_pki_engines_tool(mcp)
     register_list_certificates_tool(mcp)
 
-    print("Vault PKI MCP Server initialized successfully")
+    # Register CloudWatch tools
+    register_filter_logs_tool(mcp)
+
+    print("Vault PKI & CloudWatch MCP Server initialized successfully")
     print(f"Connected to: {os.getenv('VAULT_ADDR')}")
     if os.getenv("VAULT_NAMESPACE"):
         print(f"Namespace: {os.getenv('VAULT_NAMESPACE')}")

@@ -443,6 +443,58 @@ class VaultClient:
         except Exception as e:
             raise VaultConnectionError(f"Unexpected error reading issuer config: {str(e)}") from e
 
+    async def calculate_audit_hash(self, audit_device: str, input_value: str) -> str:
+        """Calculate HMAC-SHA256 hash for audit logs using Vault's audit-hash API.
+
+        Args:
+            audit_device: Name of the audit device (e.g., 'hcp-main-audit')
+            input_value: Value to hash (e.g., certificate subject name)
+
+        Returns:
+            str: HMAC-SHA256 hash as returned by Vault
+
+        Raises:
+            VaultConnectionError: If connection to Vault fails
+            VaultPermissionError: If token lacks permission to use audit-hash
+        """
+        try:
+            # Vault API endpoint: POST /sys/audit-hash/<device>
+            path = f"sys/audit-hash/{audit_device}"
+            data = {"input": input_value}
+
+            response = self.client.write(path, **data)
+
+            if response is None:
+                raise VaultConnectionError("No response from audit-hash API")
+
+            # Extract the hash from response
+            if isinstance(response, dict):
+                if "data" in response and "hash" in response["data"]:
+                    return response["data"]["hash"]
+                elif "hash" in response:
+                    return response["hash"]
+                else:
+                    raise VaultConnectionError(f"Unexpected audit-hash response format: {response}")
+            else:
+                raise VaultConnectionError(f"Unexpected audit-hash response type: {type(response)}")
+
+        except hvac.exceptions.Forbidden as e:
+            raise VaultPermissionError(
+                f"Token lacks permission to use audit-hash for device '{audit_device}'. "
+                f"Requires 'update' capability on 'sys/audit-hash/{audit_device}'"
+            ) from e
+
+        except hvac.exceptions.InvalidPath as e:
+            raise VaultConnectionError(
+                f"Audit device '{audit_device}' not found or not accessible"
+            ) from e
+
+        except hvac.exceptions.VaultError as e:
+            raise VaultConnectionError(f"Failed to calculate audit hash: {str(e)}") from e
+
+        except Exception as e:
+            raise VaultConnectionError(f"Unexpected error calculating audit hash: {str(e)}") from e
+
 
 def format_mcp_error(error: Exception) -> dict[str, Any]:
     """Format error as MCP error response.
