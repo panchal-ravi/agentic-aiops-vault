@@ -20,32 +20,31 @@ logger = logging.getLogger(__name__)
 
 
 def register_filter_logs_tool(mcp: FastMCP) -> None:
-    """Register the filter_pki_issue_audit_event tool with FastMCP server.
+    """Register the filter_pki_audit_events tool with FastMCP server.
 
     Args:
         mcp: FastMCP server instance
     """
 
     @mcp.tool
-    async def filter_pki_issue_audit_event(
+    async def filter_pki_audit_events(
         vault_certificate_subject: str,
         vault_pki_path: str,
         start_time: str | None = None,
         end_time: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Search for the latest Vault audit event related to PKI certificate issuance.
+        """Search for Vault audit events related to PKI certificate issuance or revocation.
 
-        This tool searches AWS CloudWatch logs for the most recent audit event that records
-        a PKI certificate issuance operation. It returns information about which Vault entity
-        performed the certificate issuance and when it was performed. The tool uses HMAC-SHA256
+        This tool searches AWS CloudWatch logs for audit events that record PKI certificate
+        issuance or revocation operations. It returns information about which Vault entity
+        performed the certificate operation and when it was performed. The tool uses HMAC-SHA256
         hashing to securely match the certificate subject against audit logs.
 
         Key Features:
-        - Identifies the Vault entity that issued a specific certificate
-        - Provides timestamp and authentication details of the issuance
+        - Identifies the Vault entity that issued or revoked a specific certificate
+        - Provides timestamp and authentication details of the operation
         - Uses secure HMAC-SHA256 hashing for certificate subject matching
-        - Filters for certificate issuance operations (not revocations or reads)
+        - Filters for certificate issuance and revocation operations
         - Returns entity display name, entity ID, and remote address information
 
         The log group name is configured via the AWS_LOG_GROUP_NAME environment variable.
