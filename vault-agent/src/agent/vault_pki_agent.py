@@ -1,7 +1,7 @@
 """Vault PKI Query Agent using AWS Strands Agent SDK."""
 
 import os
-from typing import Optional
+from typing import Optional, AsyncIterator, Dict, Any
 
 from dotenv import load_dotenv
 from strands import Agent
@@ -120,21 +120,105 @@ For PKI engine queries, use list_certificates on the specific engine.
         except Exception as e:
             return f"Error processing query: {str(e)}. Please check your connection to the MCP server and try again."
 
+    async def query_stream(self, user_prompt: str) -> AsyncIterator[Dict[str, Any]]:
+        """Process a natural language query about Vault PKI and return streaming response.
+
+        This method uses agent.stream_async to provide real-time streaming of the agent's
+        response, allowing for responsive user interfaces and real-time monitoring.
+
+        Args:
+            user_prompt: Natural language query from user
+
+        Yields:
+            Dict[str, Any]: Streaming events from the agent execution including:
+                - "data": Text chunks from the model's output
+                - "current_tool_use": Information about tools being used
+                - "result": Final AgentResult when complete
+                - Other lifecycle and processing events
+
+        Example:
+            async for event in agent.query_stream("List all PKI secrets engines"):
+                if "data" in event:
+                    print(event["data"], end="")  # Stream text output
+                elif "current_tool_use" in event:
+                    tool_name = event["current_tool_use"].get("name")
+                    if tool_name:
+                        print(f"\n🔧 Using tool: {tool_name}")
+                elif "result" in event:
+                    print(f"\n✅ Query completed")
+        """
+        try:
+            # Get MCP tools for the agent
+            with self.mcp_client:
+                tools = self.mcp_client.list_tools_sync()
+
+                # Create agent with tools
+                agent = Agent(
+                    model=self.model,
+                    tools=tools,
+                    system_prompt=self.system_prompt,
+                )
+
+                # Stream agent response
+                async for event in agent.stream_async(user_prompt):
+                    yield event
+
+        except Exception as e:
+            # Yield error event in the same format
+            yield {
+                "error": True,
+                "message": f"Error processing query: {str(e)}. Please check your connection to the MCP server and try again.",
+            }
+
 
 if __name__ == "__main__":
-    # Simple test run
+    # Test both regular and streaming query methods
     import asyncio
 
     load_dotenv()
 
-    async def test_agent():
-        user_prompt1 = "List all PKI secrets engines in Vault."
-        user_prompt2 = "Show me all certificates expiring in the next 30 days."
-        user_prompt3 = "Who issued the certificate test.example.com"
-        user_prompt4 = "Show me audit events for test.example.com"
+    async def test_regular_query():
+        """Test the regular query method."""
+        user_prompt = "List all PKI secrets engines in Vault."
 
         agent = VaultPKIAgent()
-        response = await agent.query(user_prompt4)
-        print("Agent Response:", response)
+        response = await agent.query(user_prompt)
+        print("Regular Query Response:", response)
+        print("-" * 50)
 
-    asyncio.run(test_agent())
+    async def test_streaming_query():
+        """Test the streaming query method."""
+        user_prompt = "Show me all certificates expiring in the next 30 days."
+
+        agent = VaultPKIAgent()
+        print("Streaming Query Response:")
+
+        async for event in agent.query_stream(user_prompt):
+            # print(event)
+            # Handle different event types
+            if "data" in event:
+                # Stream text output in real-time
+                print(event["data"], end="")
+            # elif "current_tool_use" in event and event["current_tool_use"].get("name"):
+            #     # Show tool usage
+            #     tool_name = event["current_tool_use"]["name"]
+            #     print(f"\n🔧 Using tool: {tool_name}")
+            # elif "result" in event:
+            #     # Final result
+            #     print("\n✅ Query completed")
+            # elif "error" in event:
+            #     # Handle errors
+            #     print(f"\n❌ Error: {event['message']}")
+
+        print("\n" + "-" * 50)
+
+    async def main():
+        print("Testing Vault PKI Agent - Regular and Streaming Methods\n")
+
+        # Test regular query method
+        # await test_regular_query()
+
+        # Test streaming query method
+        await test_streaming_query()
+
+    asyncio.run(main())

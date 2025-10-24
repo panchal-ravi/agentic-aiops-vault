@@ -13,12 +13,14 @@ The Vault PKI Query Agent allows users to query Vault PKI secrets engines and au
 
 ## Features
 
-- Natural language queries for PKI operations
-- Certificate expiration monitoring
-- Revocation status checking
-- PKI engine filtering
-- Audit trail investigation
-- Issuer attribution
+- **Natural language queries** for PKI operations
+- **Certificate expiration monitoring**
+- **Revocation status checking**
+- **PKI engine filtering**
+- **Audit trail investigation**
+- **Issuer attribution**
+- **Real-time streaming responses** - See results as they're generated
+- **Tool visibility** - Monitor which Vault operations are being performed
 
 ## Quick Start
 
@@ -62,11 +64,41 @@ The application will be available at `http://localhost:8501`
 
 ## Usage Examples
 
+### Basic Queries
 - "Show me all certificates expiring in next 30 days"
 - "List all revoked certificates"
 - "Show certificates from pki_int engine"
 - "Who issued web.example.com certificate?"
 - "Show audit events for api.example.com"
+
+### Streaming vs Regular Queries
+
+The agent now supports both regular and streaming query methods:
+
+#### Regular Query (Complete Response)
+```python
+from src.agent.vault_pki_agent import VaultPKIAgent
+
+agent = VaultPKIAgent()
+response = await agent.query("List all PKI secrets engines")
+print(response)
+```
+
+#### Streaming Query (Real-time Response)
+```python
+from src.agent.vault_pki_agent import VaultPKIAgent
+
+agent = VaultPKIAgent()
+async for event in agent.query_stream("List all PKI secrets engines"):
+    if "data" in event:
+        print(event["data"], end="")  # Stream text as it's generated
+    elif "current_tool_use" in event:
+        tool_name = event["current_tool_use"].get("name")
+        if tool_name:
+            print(f"\n🔧 Using tool: {tool_name}")
+```
+
+See `docs/streaming_usage.md` for detailed streaming implementation guide.
 
 ## Architecture
 
@@ -82,6 +114,18 @@ The agent uses the OpenAI model to understand natural language queries and autom
 
 ```bash
 uv run pytest
+```
+
+### Examples
+
+Run the streaming examples:
+
+```bash
+# Test both regular and streaming methods
+python src/agent/vault_pki_agent.py
+
+# Comprehensive streaming demo
+python examples/streaming_example.py
 ```
 
 ### Code Quality

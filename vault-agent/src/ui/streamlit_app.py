@@ -58,6 +58,39 @@ def render_sidebar():
         if st.button("🔄 Check Health", use_container_width=True):
             st.session_state.health_check_requested = True
 
+        st.divider()
+
+        st.header("🔄 Streaming Info")
+
+        # Streaming mode info
+        streaming_enabled = st.session_state.get("streaming_enabled", True)
+        if streaming_enabled:
+            st.success("Real-time streaming: **Enabled**")
+            st.markdown("""
+            **Benefits:**
+            - See responses as they generate
+            - Monitor tool usage in real-time
+            - Better user experience
+            - Early error detection
+            """)
+        else:
+            st.info("Regular mode: **Enabled**")
+            st.markdown("""
+            **Mode:**
+            - Complete response at once
+            - Traditional query processing
+            - No real-time feedback
+            """)
+
+        # Show performance tips
+        with st.expander("💡 Performance Tips"):
+            st.markdown("""
+            - Use **streaming mode** for complex queries
+            - Streaming shows tool usage in real-time
+            - Regular mode for simple, quick queries
+            - Watch the status indicators during processing
+            """)
+
 
 def render_query_input() -> Optional[str]:
     """Render the query input interface.
@@ -77,7 +110,7 @@ def render_query_input() -> Optional[str]:
         "Enter your question about Vault PKI:",
         value=prompt_text,
         placeholder="e.g., Show me all certificates expiring in next 30 days",
-        help="Type your question in natural language",
+        help="Type your question in natural language. In streaming mode, you'll see real-time responses and tool usage.",
     )
 
     col1, col2, col3 = st.columns([1, 1, 4])
@@ -328,7 +361,8 @@ def render_footer():
     st.markdown(
         """
     <div style='text-align: center; color: #666; font-size: 0.8em;'>
-    Vault PKI Query Agent | Built with Streamlit and AWS Strands Agent SDK
+    Vault PKI Query Agent | Built with Streamlit and AWS Strands Agent SDK<br>
+    ✨ Features real-time streaming responses and tool monitoring
     </div>
     """,
         unsafe_allow_html=True,
