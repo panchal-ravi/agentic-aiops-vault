@@ -1,0 +1,532 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Vault PKI Query Agent API",
+    "description": "Natural language interface for querying HashiCorp Vault PKI secrets engines and audit events. Provides simplified certificate data and audit trail investigation capabilities.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/query": {
+      "post": {
+        "summary": "Process natural language PKI query",
+        "description": "Accepts natural language queries about Vault PKI certificates and returns structured results. Supports expiration checks, revocation status, PKI engine filtering, audit trails, and issuer attribution.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              },
+              "examples": {
+                "expiration_query": {
+                  "summary": "Certificate expiration query",
+                  "value": {
+                    "query_text": "Show me all certificates expiring in next 30 days",
+                    "session_id": "session_123"
+                  }
+                },
+                "revocation_query": {
+                  "summary": "Revoked certificates query",
+                  "value": {
+                    "query_text": "List all revoked certificates from last month",
+                    "session_id": "session_123"
+                  }
+                },
+                "audit_query": {
+                  "summary": "Certificate audit trail query",
+                  "value": {
+                    "query_text": "Show audit events for web.example.com certificate",
+                    "session_id": "session_123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                },
+                "examples": {
+                  "certificate_results": {
+                    "summary": "Successful certificate query response",
+                    "value": {
+                      "success": true,
+                      "message": "Found 3 certificates expiring in next 30 days",
+                      "query_type": "EXPIRATION_CHECK",
+                      "certificates": [
+                        {
+                          "serial_number": "39:4e:fa:01:23",
+                          "subject_cn": "webserver.example.com",
+                          "pki_engine": "pki_int",
+                          "expiration_date": "2024-11-25T14:30:00Z",
+                          "days_until_expiry": 28,
+                          "is_expired": false,
+                          "is_revoked": false,
+                          "issuer_hierarchy": [
+                            "Intermediate CA",
+                            "Root CA"
+                          ]
+                        }
+                      ],
+                      "query_metadata": {
+                        "execution_time_ms": 1250,
+                        "mcp_calls_made": 2,
+                        "results_count": 3
+                      }
+                    }
+                  },
+                  "audit_results": {
+                    "summary": "Successful audit query response",
+                    "value": {
+                      "success": true,
+                      "message": "Found 2 audit events for web.example.com",
+                      "query_type": "AUDIT_TRAIL",
+                      "audit_events": [
+                        {
+                          "timestamp": "2023-10-22T10:30:45Z",
+                          "event_type": "CERTIFICATE_ISSUED",
+                          "certificate_subject": "web.example.com",
+                          "actor_name": "token-service-account",
+                          "actor_id": "550e8400-e29b-41d4-a716-446655440000",
+                          "remote_address": "10.0.1.42",
+                          "request_path": "pki_int/issue/web-server-role"
+                        }
+                      ],
+                      "query_metadata": {
+                        "execution_time_ms": 3200,
+                        "mcp_calls_made": 1,
+                        "results_count": 2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query or malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error_code": "INVALID_QUERY",
+                  "message": "Unable to parse query. Please try one of the example prompts.",
+                  "details": {
+                    "query_text": "invalid query text",
+                    "suggested_queries": [
+                      "Show certificates expiring in next 30 days",
+                      "List all revoked certificates"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error or MCP service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error_code": "MCP_CONNECTION_ERROR",
+                  "message": "Cannot connect to Vault MCP server. Please verify service is running.",
+                  "details": {
+                    "mcp_endpoint": "http://localhost:8000",
+                    "retry_suggested": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/examples": {
+      "get": {
+        "summary": "Get example query prompts",
+        "description": "Returns a list of example natural language queries that users can use to interact with the PKI agent.",
+        "responses": {
+          "200": {
+            "description": "Example prompts retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamplePromptsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Agent health check",
+        "description": "Checks the health of the agent and its dependencies (MCP server, Vault connectivity).",
+        "responses": {
+          "200": {
+            "description": "Agent is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "healthy",
+                        "degraded",
+                        "unhealthy"
+                      ]
+                    },
+                    "mcp_server_status": {
+                      "type": "string",
+                      "enum": [
+                        "connected",
+                        "disconnected"
+                      ]
+                    },
+                    "vault_status": {
+                      "type": "string",
+                      "enum": [
+                        "accessible",
+                        "inaccessible"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "QueryRequest": {
+        "type": "object",
+        "required": [
+          "query_text"
+        ],
+        "properties": {
+          "query_text": {
+            "type": "string",
+            "description": "Natural language query about PKI certificates or audit events",
+            "maxLength": 500,
+            "example": "Show me all certificates expiring in next 30 days"
+          },
+          "session_id": {
+            "type": "string",
+            "description": "Optional session identifier for query history tracking",
+            "example": "session_123"
+          }
+        }
+      },
+      "QueryResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the query was processed successfully"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable summary of query results"
+          },
+          "query_type": {
+            "type": "string",
+            "enum": [
+              "EXPIRATION_CHECK",
+              "REVOCATION_STATUS",
+              "PKI_ENGINE_FILTER",
+              "AUDIT_TRAIL",
+              "ISSUER_ATTRIBUTION",
+              "HELP_REQUEST"
+            ],
+            "description": "Identified type of the user query"
+          },
+          "certificates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificateSummary"
+            },
+            "description": "Certificate results for certificate-focused queries"
+          },
+          "audit_events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            },
+            "description": "Audit event results for audit-focused queries"
+          },
+          "pki_engines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PKIEngineInfo"
+            },
+            "description": "PKI engine information for engine listing queries"
+          },
+          "query_metadata": {
+            "$ref": "#/components/schemas/QueryMetadata"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Non-fatal warnings or errors during query processing"
+          }
+        }
+      },
+      "CertificateSummary": {
+        "type": "object",
+        "required": [
+          "serial_number",
+          "subject_cn",
+          "pki_engine",
+          "expiration_date",
+          "days_until_expiry",
+          "is_expired",
+          "is_revoked"
+        ],
+        "properties": {
+          "serial_number": {
+            "type": "string",
+            "description": "Certificate serial number in hex format",
+            "example": "39:4e:fa:01:23"
+          },
+          "subject_cn": {
+            "type": "string",
+            "description": "Common name from certificate subject",
+            "example": "webserver.example.com"
+          },
+          "pki_engine": {
+            "type": "string",
+            "description": "Mount path of the PKI secrets engine that issued this certificate",
+            "example": "pki_int"
+          },
+          "expiration_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Certificate expiration timestamp in ISO 8601 format",
+            "example": "2024-11-25T14:30:00Z"
+          },
+          "days_until_expiry": {
+            "type": "integer",
+            "description": "Days remaining until expiration (negative if expired)",
+            "example": 28
+          },
+          "is_expired": {
+            "type": "boolean",
+            "description": "Whether the certificate has expired"
+          },
+          "is_revoked": {
+            "type": "boolean",
+            "description": "Whether the certificate has been revoked"
+          },
+          "revocation_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date of revocation if certificate is revoked",
+            "example": "2024-10-15T09:15:00Z"
+          },
+          "issuer_hierarchy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Chain of issuing Certificate Authorities",
+            "example": [
+              "Intermediate CA",
+              "Root CA"
+            ]
+          }
+        }
+      },
+      "AuditEvent": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "event_type",
+          "certificate_subject",
+          "actor_name"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the audit event occurred",
+            "example": "2023-10-22T10:30:45Z"
+          },
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "CERTIFICATE_ISSUED",
+              "CERTIFICATE_REVOKED",
+              "CERTIFICATE_RENEWED"
+            ],
+            "description": "Type of certificate lifecycle event"
+          },
+          "certificate_subject": {
+            "type": "string",
+            "description": "Subject/common name of the affected certificate",
+            "example": "web.example.com"
+          },
+          "actor_name": {
+            "type": "string",
+            "description": "Display name of the entity that performed the action",
+            "example": "token-service-account"
+          },
+          "actor_id": {
+            "type": "string",
+            "description": "Unique identifier of the acting entity",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "remote_address": {
+            "type": "string",
+            "description": "IP address of the client that made the request",
+            "example": "10.0.1.42"
+          },
+          "request_path": {
+            "type": "string",
+            "description": "Vault API path of the operation",
+            "example": "pki_int/issue/web-server-role"
+          },
+          "mount_accessor": {
+            "type": "string",
+            "description": "PKI mount accessor ID",
+            "example": "pki_abc123"
+          }
+        }
+      },
+      "PKIEngineInfo": {
+        "type": "object",
+        "required": [
+          "path",
+          "type",
+          "description"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Mount path of the PKI secrets engine",
+            "example": "pki_int"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "pki"
+            ],
+            "description": "Secrets engine type (always 'pki' for PKI engines)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the PKI engine",
+            "example": "Intermediate CA for production services"
+          },
+          "certificate_count": {
+            "type": "integer",
+            "description": "Number of certificates managed by this engine",
+            "example": 42
+          }
+        }
+      },
+      "QueryMetadata": {
+        "type": "object",
+        "properties": {
+          "execution_time_ms": {
+            "type": "integer",
+            "description": "Query execution time in milliseconds",
+            "example": 1250
+          },
+          "mcp_calls_made": {
+            "type": "integer",
+            "description": "Number of MCP tool calls made during query processing",
+            "example": 2
+          },
+          "results_count": {
+            "type": "integer",
+            "description": "Total number of results returned",
+            "example": 3
+          }
+        }
+      },
+      "ExamplePromptsResponse": {
+        "type": "object",
+        "properties": {
+          "examples": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "type": "string",
+                  "description": "Category of the example query",
+                  "example": "Certificate Expiration"
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "Example query text",
+                  "example": "Show me all certificates expiring in next 30 days"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Description of what this query does",
+                  "example": "Lists certificates that will expire within the next 30 days"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "error_code",
+          "message"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Always false for error responses"
+          },
+          "error_code": {
+            "type": "string",
+            "description": "Machine-readable error code",
+            "example": "INVALID_QUERY"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message",
+            "example": "Unable to parse query. Please try one of the example prompts."
+          },
+          "details": {
+            "type": "object",
+            "description": "Additional error context and debugging information",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}
