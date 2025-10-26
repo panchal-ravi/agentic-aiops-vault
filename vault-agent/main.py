@@ -66,6 +66,7 @@ async def process_query_async(agent: VaultPKIAgent, query_text: str) -> None:
 
         full_response = ""
         current_tools = []
+        current_tool_names = set()  # Track unique tool names to prevent duplicates
 
         async for event in agent.query_stream(query_text):
             # Handle different event types with error checking
@@ -86,7 +87,7 @@ async def process_query_async(agent: VaultPKIAgent, query_text: str) -> None:
                         tool_name = tool_use_info.get("name", "Unknown Tool")
                         tool_input = tool_use_info.get("input", {})
 
-                        # Add to current tools if not already there
+                        # Add to current tools if not already there (deduplicate by tool name)
                         tool_info = f"🔧 Using: **{tool_name}**"
                         if tool_input:
                             # Show key parameters for context
@@ -107,8 +108,10 @@ async def process_query_async(agent: VaultPKIAgent, query_text: str) -> None:
                             if key_params:
                                 tool_info += f" ({', '.join(key_params)})"
 
-                        if tool_info not in current_tools:
-                            current_tools.append(tool_info)
+                        # Only add if this tool name hasn't been seen before
+                        if tool_name not in current_tool_names:
+                            current_tool_names.add(tool_name)
+                            current_tools.append(f"🔧 **{tool_name}**")
                             tool_placeholder.markdown(
                                 "#### Tools Used\n" + "\n".join(current_tools)
                             )
@@ -239,8 +242,11 @@ def main():
                     for tool in st.session_state.last_tools_used:
                         st.markdown(tool)
 
+            # Add clear separation
+            st.markdown("---")
+
         # Query history
-        render_query_history()
+        # render_query_history()
 
         # Connection status
         show_connection_status()

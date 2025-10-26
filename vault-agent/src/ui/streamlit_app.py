@@ -17,26 +17,547 @@ def setup_page_config():
         initial_sidebar_state="expanded",
     )
 
+    # Apply Vault-inspired theme with modern fonts and white backgrounds
+    st.markdown(
+        """
+    <style>
+    /* Import Noto Sans fonts with preload for better performance */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Sans+Mono:wght@100..900&display=swap');
+    
+    /* Force font loading and apply globally with highest priority */
+    * {
+        font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+    }
+    
+    /* Specific targeting for all text elements */
+    body, html, div, span, p, h1, h2, h3, h4, h5, h6, 
+    .stApp, .main, [data-testid="stAppViewContainer"],
+    [data-testid="block-container"], .css-1d391kg,
+    .css-18e3th9, .css-1dp5vir, .css-k1vhr4 {
+        font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    }
+    
+    /* Code elements with Noto Sans Mono */
+    code, pre, kbd, samp, tt, .stCode, [class*="code"],
+    .css-1cpxqw2, .css-1x8cf1d {
+        font-family: 'Noto Sans Mono', 'SF Mono', 'Monaco', 'Inconsolata', monospace !important;
+    }
+    
+    /* Root variables for consistent theming */
+    :root {
+        --vault-primary: #1563ff;
+        --vault-primary-dark: #0d47cc;
+        --vault-secondary: #2563eb;
+        --vault-bg: #ffffff;
+        --vault-sidebar-bg: #f8fafc;
+        --vault-content-bg: #ffffff;
+        --vault-border: #e2e8f0;
+        --vault-border-dark: #cbd5e0;
+        --vault-text-primary: #1a202c;
+        --vault-text-secondary: #4a5568;
+        --vault-text-muted: #718096;
+        --vault-success: #38a169;
+        --vault-warning: #d69e2e;
+        --vault-error: #e53e3e;
+        --vault-info: #3182ce;
+    }
+    
+    /* Modern font configuration - using Noto Sans with maximum specificity */
+    html, body, [class*="css"], .stApp, .main,
+    div, span, p, h1, h2, h3, h4, h5, h6, label, input, button, select, textarea,
+    [data-testid="stAppViewContainer"], [data-testid="block-container"],
+    [data-testid="stSidebar"], .css-1d391kg, .css-18e3th9 {
+        font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+    }
+    
+    /* Code font - using Noto Sans Mono with maximum specificity */
+    code, pre, .stCode, [class*="code"], kbd, samp, tt,
+    .css-1cpxqw2, .css-1x8cf1d, [data-testid="stCodeBlock"] {
+        font-family: 'Noto Sans Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
+    }
+    
+    /* Main app background */
+    .stApp {
+        background-color: var(--vault-bg) !important;
+        color: var(--vault-text-primary) !important;
+        font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    }
+    
+    /* Sidebar styling - white background */
+    .stSidebar {
+        background-color: var(--vault-sidebar-bg) !important;
+        border-right: 1px solid var(--vault-border) !important;
+    }
+    
+    .stSidebar .stMarkdown,
+    .stSidebar .stMarkdown *,
+    .stSidebar h1,
+    .stSidebar h2,
+    .stSidebar h3,
+    .stSidebar h4,
+    .stSidebar h5,
+    .stSidebar h6,
+    .stSidebar p,
+    .stSidebar div,
+    .stSidebar span {
+        color: var(--vault-text-primary) !important;
+    }
+    
+    /* Main content area - white background */
+    .main .block-container,
+    [data-testid="block-container"] {
+        background-color: var(--vault-content-bg) !important;
+        color: var(--vault-text-primary) !important;
+        padding: 2rem !important;
+        border-radius: 8px !important;
+        margin: 1rem !important;
+    }
+    
+    /* Main content text styling with modern fonts */
+    .main h1,
+    .main h2,
+    .main h3,
+    .main h4,
+    .main h5,
+    .main h6 {
+        color: var(--vault-text-primary) !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.025em !important;
+    }
+    
+    .main h1 {
+        font-size: 2.5rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 1rem !important;
+        background: linear-gradient(135deg, var(--vault-primary), var(--vault-secondary)) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        letter-spacing: -0.05em !important;
+    }
+    
+    .main p,
+    .main .stMarkdown,
+    .main .stText,
+    .main div {
+        color: var(--vault-text-secondary) !important;
+        line-height: 1.6 !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Input fields with modern styling */
+    .stTextInput > div > div > input {
+        background-color: var(--vault-content-bg) !important;
+        color: var(--vault-text-primary) !important;
+        border: 2px solid var(--vault-border) !important;
+        border-radius: 8px !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        font-weight: 400 !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 1rem !important;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: var(--vault-primary) !important;
+        box-shadow: 0 0 0 3px rgba(21, 99, 255, 0.1) !important;
+        outline: none !important;
+    }
+    
+    .stTextInput > label {
+        color: var(--vault-text-primary) !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .stTextInput input::placeholder {
+        color: var(--vault-text-muted) !important;
+        font-family: 'Noto Sans', sans-serif !important;
+    }
+    
+    /* Modern button styling */
+    .stButton > button {
+        background-color: var(--vault-primary) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        padding: 0.75rem 1.5rem !important;
+        transition: all 0.2s ease !important;
+        letter-spacing: 0.025em !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: var(--vault-primary-dark) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(21, 99, 255, 0.3) !important;
+    }
+    
+    /* Secondary buttons */
+    .stButton > button[kind="secondary"] {
+        background-color: transparent !important;
+        border: 2px solid var(--vault-border) !important;
+        color: var(--vault-text-secondary) !important;
+    }
+    
+    .stButton > button[kind="secondary"]:hover {
+        border-color: var(--vault-primary) !important;
+        color: var(--vault-primary) !important;
+        background-color: rgba(21, 99, 255, 0.05) !important;
+    }
+    
+    /* Sidebar buttons with white background */
+    .stSidebar .stButton > button {
+        background-color: #f8fafc !important;
+        border: 1px solid var(--vault-border) !important;
+        color: var(--vault-text-primary) !important;
+        width: 100% !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        font-weight: 400 !important;
+    }
+    
+    .stSidebar .stButton > button:hover {
+        background-color: var(--vault-primary) !important;
+        border-color: var(--vault-primary) !important;
+        color: white !important;
+    }
+    
+    /* Data frames and tables */
+    .stDataFrame {
+        background-color: var(--vault-content-bg) !important;
+        border: 1px solid var(--vault-border) !important;
+        border-radius: 8px !important;
+        font-family: 'Noto Sans', sans-serif !important;
+    }
+    
+    .stDataFrame table {
+        background-color: var(--vault-content-bg) !important;
+        color: var(--vault-text-primary) !important;
+        font-family: 'Noto Sans', sans-serif !important;
+    }
+    
+    .stDataFrame th {
+        background-color: #f8fafc !important;
+        color: var(--vault-text-primary) !important;
+        font-weight: 600 !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        border-bottom: 2px solid var(--vault-border) !important;
+    }
+    
+    .stDataFrame td {
+        color: var(--vault-text-secondary) !important;
+        border-bottom: 1px solid var(--vault-border) !important;
+        font-family: 'Noto Sans', sans-serif !important;
+    }
+    
+    /* Metrics with modern typography */
+    [data-testid="metric-container"] {
+        background-color: #f8fafc !important;
+        border: 1px solid var(--vault-border) !important;
+        border-radius: 8px !important;
+        padding: 1rem !important;
+    }
+    
+    [data-testid="metric-container"] > div {
+        color: var(--vault-text-primary) !important;
+        font-family: 'Noto Sans', sans-serif !important;
+    }
+    
+    [data-testid="metric-container"] [data-testid="metric-value"] {
+        font-weight: 600 !important;
+        font-size: 1.5rem !important;
+    }
+    
+    /* Alert boxes */
+    .stAlert {
+        border-radius: 8px !important;
+        border: none !important;
+        margin: 1rem 0 !important;
+        font-family: 'Noto Sans', sans-serif !important;
+    }
+    
+    .stSuccess {
+        background-color: rgba(56, 161, 105, 0.1) !important;
+        color: var(--vault-success) !important;
+        border-left: 4px solid var(--vault-success) !important;
+    }
+    
+    .stError {
+        background-color: rgba(229, 62, 62, 0.1) !important;
+        color: var(--vault-error) !important;
+        border-left: 4px solid var(--vault-error) !important;
+    }
+    
+    .stWarning {
+        background-color: rgba(214, 158, 46, 0.1) !important;
+        color: var(--vault-warning) !important;
+        border-left: 4px solid var(--vault-warning) !important;
+    }
+    
+    .stInfo {
+        background-color: rgba(49, 130, 206, 0.1) !important;
+        color: var(--vault-info) !important;
+        border-left: 4px solid var(--vault-info) !important;
+    }
+    
+    /* Expanders */
+    .streamlit-expanderHeader {
+        background-color: #f8fafc !important;
+        color: var(--vault-text-primary) !important;
+        border: 1px solid var(--vault-border) !important;
+        border-radius: 8px !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        font-weight: 500 !important;
+        margin: 1rem 0 !important;
+        clear: both !important;
+    }
+    
+    .streamlit-expanderContent {
+        background-color: var(--vault-content-bg) !important;
+        border: 1px solid var(--vault-border) !important;
+        border-top: none !important;
+        border-radius: 0 0 8px 8px !important;
+        clear: both !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Fix text overlap issues */
+    .main .block-container > div {
+        clear: both !important;
+        margin-bottom: 1rem !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    /* Ensure proper spacing between sections */
+    .stMarkdown {
+        margin-bottom: 1rem !important;
+        clear: both !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .stExpander {
+        margin: 1rem 0 !important;
+        clear: both !important;
+        position: relative !important;
+        z-index: 2 !important;
+    }
+    
+    /* Prevent text from floating or overlapping */
+    .main .element-container {
+        clear: both !important;
+        position: relative !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Ensure query history section is properly isolated */
+    .stExpander [data-testid="stExpanderDetails"] {
+        clear: both !important;
+        position: relative !important;
+        background-color: var(--vault-content-bg) !important;
+        padding: 1rem !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    /* Dividers */
+    hr {
+        border-color: var(--vault-border) !important;
+        margin: 2rem 0 !important;
+    }
+    
+    /* Code blocks with Noto Sans Mono */
+    .stCode {
+        background-color: #f8fafc !important;
+        border: 1px solid var(--vault-border) !important;
+        border-radius: 6px !important;
+        font-family: 'Noto Sans Mono', monospace !important;
+    }
+    
+    code {
+        background-color: #f8fafc !important;
+        color: var(--vault-primary) !important;
+        padding: 0.25rem 0.5rem !important;
+        border-radius: 4px !important;
+        font-family: 'Noto Sans Mono', 'SF Mono', 'Monaco', monospace !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Toggle switch styling */
+    .stCheckbox > label {
+        color: var(--vault-text-primary) !important;
+        font-family: 'Noto Sans', sans-serif !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Custom status indicators */
+    .status-active { color: var(--vault-success) !important; }
+    .status-warning { color: var(--vault-warning) !important; }
+    .status-error { color: var(--vault-error) !important; }
+    .status-info { color: var(--vault-info) !important; }
+    
+    /* Modern scrollbars */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--vault-border-dark);
+        border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--vault-primary);
+    }
+    
+    /* Hide Streamlit branding - but preserve sidebar toggle */
+    #MainMenu .css-14xtw13.e8zbici0 {visibility: hidden;} /* Hide main menu items but not sidebar toggle */
+    footer {visibility: hidden;}
+    .css-1dp5vir {visibility: hidden;} /* Hide "Made with Streamlit" */
+    
+    /* Ensure sidebar toggle remains visible */
+    button[kind="header"] {visibility: visible !important;}
+    [data-testid="collapsedControl"] {visibility: visible !important;}
+    .css-1lcbmhc.e1fqkh3o0 {visibility: visible !important;}
+    
+    /* Custom animation for loading states */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .loading {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    /* Improved typography scale */
+    h1 { font-size: 2.5rem; line-height: 1.2; }
+    h2 { font-size: 2rem; line-height: 1.3; }
+    h3 { font-size: 1.5rem; line-height: 1.4; }
+    h4 { font-size: 1.25rem; line-height: 1.4; }
+    h5 { font-size: 1.125rem; line-height: 1.5; }
+    h6 { font-size: 1rem; line-height: 1.5; }
+    
+    /* Better spacing for readability */
+    p { margin-bottom: 1rem; }
+    
+    /* Focus states for accessibility */
+    *:focus {
+        outline: 2px solid var(--vault-primary) !important;
+        outline-offset: 2px !important;
+    }
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )
+
 
 def render_header():
     """Render the main page header."""
-    st.title("🔐 Vault PKI Query Agent")
-    st.markdown("""
-    **Natural language interface for HashiCorp Vault PKI operations**
-    
-    Ask questions about your certificates, audit events, and PKI infrastructure using plain English.
-    """)
+    # Custom header with Vault styling
+    st.markdown(
+        """
+    <div style="
+        padding: 2rem 0 1rem 0;
+        border-bottom: 1px solid var(--vault-border);
+        margin-bottom: 2rem;
+    ">
+        <h1 style="
+            font-size: 2.5rem !important;
+            font-weight: 700 !important;
+            margin: 0 0 0.5rem 0 !important;
+            background: linear-gradient(135deg, #1563ff, #2563eb) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        ">
+            🔐 Vault PKI Query Agent
+        </h1>
+        <p style="
+            font-size: 1.1rem !important;
+            color: var(--vault-text-secondary) !important;
+            margin: 0 !important;
+            font-weight: 400 !important;
+            line-height: 1.5 !important;
+        ">
+            Natural language interface for HashiCorp Vault PKI operations
+        </p>
+        <p style="
+            font-size: 0.95rem !important;
+            color: var(--vault-text-muted) !important;
+            margin: 0.5rem 0 0 0 !important;
+            font-weight: 300 !important;
+        ">
+            Ask questions about your certificates, audit events, and PKI infrastructure using plain English.
+        </p>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_sidebar():
     """Render the sidebar with example prompts and help."""
     with st.sidebar:
-        st.header("📚 Example Queries")
+        # Vault-style sidebar header
+        st.markdown(
+            """
+        <div style="
+            text-align: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--vault-border);
+            margin-bottom: 1.5rem;
+        ">
+            <h2 style="
+                font-size: 1.25rem !important;
+                margin: 0 !important;
+                color: var(--vault-text-primary) !important;
+                font-weight: 600 !important;
+            ">📚 Example Queries</h2>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
 
         prompts_by_category = get_prompts_by_category()
 
         for category, prompts in prompts_by_category.items():
-            st.subheader(category)
+            # Category header with better styling
+            st.markdown(
+                f"""
+            <div style="
+                margin: 1rem 0 0.5rem 0;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid var(--vault-border);
+            ">
+                <h3 style="
+                    font-size: 1rem !important;
+                    margin: 0 !important;
+                    color: var(--vault-primary) !important;
+                    font-weight: 500 !important;
+                ">{category}</h3>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
             for prompt in prompts:
                 if st.button(
                     prompt["prompt"],
@@ -46,50 +567,159 @@ def render_sidebar():
                 ):
                     st.session_state.selected_prompt = prompt["prompt"]
 
-        st.divider()
+        st.markdown(
+            '<div style="margin: 2rem 0;"><hr style="border: 1px solid var(--vault-border);"></div>',
+            unsafe_allow_html=True,
+        )
 
-        st.header("ℹ️ System Info")
+        # System Info section
+        st.markdown(
+            """
+        <div style="
+            padding: 1rem 0 0.5rem 0;
+        ">
+            <h2 style="
+                font-size: 1.25rem !important;
+                margin: 0 0 1rem 0 !important;
+                color: var(--vault-text-primary) !important;
+                font-weight: 600 !important;
+            ">ℹ️ System Info</h2>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
 
-        # Display connection status
+        # Display connection status with better styling
         mcp_url = st.session_state.get("mcp_server_url", "Not configured")
-        st.text(f"MCP Server: {mcp_url}")
+        st.markdown(
+            f"""
+        <div style="
+            background-color: var(--vault-content-bg);
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--vault-border);
+            margin-bottom: 1rem;
+        ">
+            <div style="
+                font-size: 0.85rem;
+                color: var(--vault-text-muted);
+                margin-bottom: 0.25rem;
+            ">MCP Server</div>
+            <div style="
+                color: var(--vault-text-primary);
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.8rem;
+            ">{mcp_url}</div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
 
         # Health check button
         if st.button("🔄 Check Health", use_container_width=True):
             st.session_state.health_check_requested = True
 
-        st.divider()
+        st.markdown(
+            '<div style="margin: 2rem 0;"><hr style="border: 1px solid var(--vault-border);"></div>',
+            unsafe_allow_html=True,
+        )
 
-        st.header("🔄 Streaming Info")
+        # Streaming Info section
+        st.markdown(
+            """
+        <div style="
+            padding: 1rem 0 0.5rem 0;
+        ">
+            <h2 style="
+                font-size: 1.25rem !important;
+                margin: 0 0 1rem 0 !important;
+                color: var(--vault-text-primary) !important;
+                font-weight: 600 !important;
+            ">🔄 Streaming Info</h2>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
 
-        # Streaming mode info
+        # Streaming mode info with cards
         streaming_enabled = st.session_state.get("streaming_enabled", True)
         if streaming_enabled:
-            st.success("Real-time streaming: **Enabled**")
-            st.markdown("""
-            **Benefits:**
-            - See responses as they generate
-            - Monitor tool usage in real-time
-            - Better user experience
-            - Early error detection
-            """)
+            st.markdown(
+                """
+            <div style="
+                background-color: rgba(56, 161, 105, 0.1);
+                border: 1px solid var(--vault-success);
+                border-radius: 6px;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            ">
+                <div style="
+                    color: var(--vault-success);
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                ">Real-time streaming: Enabled</div>
+                <div style="
+                    color: var(--vault-text-secondary);
+                    font-size: 0.85rem;
+                    line-height: 1.4;
+                ">
+                    <strong>Benefits:</strong><br>
+                    • See responses as they generate<br>
+                    • Monitor tool usage in real-time<br>
+                    • Better user experience<br>
+                    • Early error detection
+                </div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
         else:
-            st.info("Regular mode: **Enabled**")
-            st.markdown("""
-            **Mode:**
-            - Complete response at once
-            - Traditional query processing
-            - No real-time feedback
-            """)
+            st.markdown(
+                """
+            <div style="
+                background-color: rgba(49, 130, 206, 0.1);
+                border: 1px solid var(--vault-info);
+                border-radius: 6px;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            ">
+                <div style="
+                    color: var(--vault-info);
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                ">Regular mode: Enabled</div>
+                <div style="
+                    color: var(--vault-text-secondary);
+                    font-size: 0.85rem;
+                    line-height: 1.4;
+                ">
+                    <strong>Mode:</strong><br>
+                    • Complete response at once<br>
+                    • Traditional query processing<br>
+                    • No real-time feedback
+                </div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
 
         # Show performance tips
         with st.expander("💡 Performance Tips"):
-            st.markdown("""
-            - Use **streaming mode** for complex queries
-            - Streaming shows tool usage in real-time
-            - Regular mode for simple, quick queries
-            - Watch the status indicators during processing
-            """)
+            st.markdown(
+                """
+            <div style="
+                color: var(--vault-text-secondary);
+                font-size: 0.85rem;
+                line-height: 1.5;
+            ">
+            • Use <strong>streaming mode</strong> for complex queries<br>
+            • Streaming shows tool usage in real-time<br>
+            • Regular mode for simple, quick queries<br>
+            • Watch the status indicators during processing
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
 
 
 def render_query_input() -> Optional[str]:
@@ -105,23 +735,54 @@ def render_query_input() -> Optional[str]:
     else:
         prompt_text = ""
 
-    # Query input
-    query_text = st.text_input(
-        "Enter your question about Vault PKI:",
-        value=prompt_text,
-        placeholder="e.g., Show me all certificates expiring in next 30 days",
-        help="Type your question in natural language. In streaming mode, you'll see real-time responses and tool usage.",
+    # Query input section with improved styling
+    st.markdown(
+        """
+    <div style="
+        background-color: var(--vault-sidebar-bg);
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid var(--vault-border);
+        margin-bottom: 2rem;
+    ">
+        <h3 style="
+            font-size: 1.1rem !important;
+            margin: 0 0 1rem 0 !important;
+            color: var(--vault-text-primary) !important;
+            font-weight: 500 !important;
+        ">🔍 Ask Your Question</h3>
+    </div>
+    """,
+        unsafe_allow_html=True,
     )
 
-    col1, col2, col3 = st.columns([1, 1, 4])
+    # Use a form to enable Enter key submission
+    with st.form(key="query_form", clear_on_submit=False):
+        # Query input
+        query_text = st.text_input(
+            "Enter your question about Vault PKI:",
+            value=prompt_text,
+            placeholder="e.g., Show me all certificates expiring in next 30 days",
+            help="Type your question in natural language and press Enter to submit. In streaming mode, you'll see real-time responses and tool usage.",
+            label_visibility="collapsed",
+        )
 
-    with col1:
-        submit_clicked = st.button("🔍 Query", type="primary", use_container_width=True)
+        col1, col2, col3 = st.columns([1, 1, 4])
 
-    with col2:
-        clear_clicked = st.button("🗑️ Clear", use_container_width=True)
-        if clear_clicked:
-            st.rerun()
+        with col1:
+            submit_clicked = st.form_submit_button(
+                "🔍 Query", type="primary", use_container_width=True
+            )
+
+        with col2:
+            clear_clicked = st.form_submit_button("🗑️ Clear", use_container_width=True)
+
+    # Handle clear button outside the form to avoid form submission conflicts
+    if clear_clicked:
+        # Clear the session state for selected prompt
+        if "selected_prompt" in st.session_state:
+            del st.session_state.selected_prompt
+        st.rerun()
 
     if submit_clicked and query_text.strip():
         return query_text.strip()
@@ -318,12 +979,51 @@ def render_query_history():
         st.session_state.query_history = []
 
     if st.session_state.query_history:
+        # Add proper spacing and isolation for query history
+        st.markdown(
+            """
+        <div style="
+            margin-top: 2rem;
+            clear: both;
+            position: relative;
+            z-index: 1;
+        "></div>
+        """,
+            unsafe_allow_html=True,
+        )
+
         with st.expander("📜 Query History"):
+            st.markdown(
+                """
+            <div style="
+                padding: 0.5rem 0;
+                clear: both;
+                overflow: hidden;
+            ">
+            """,
+                unsafe_allow_html=True,
+            )
+
             for i, (timestamp, query, success) in enumerate(
                 reversed(st.session_state.query_history[-10:])
             ):
                 status_icon = "✅" if success else "❌"
-                st.text(f"{status_icon} {timestamp}: {query}")
+                st.markdown(
+                    f"""
+                <div style="
+                    margin: 0.5rem 0;
+                    padding: 0.25rem 0;
+                    clear: both;
+                    line-height: 1.4;
+                    font-family: 'Noto Sans', sans-serif;
+                ">
+                    {status_icon} {timestamp}: {query}
+                </div>
+                """,
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("</div>", unsafe_allow_html=True)
 
 
 def add_to_query_history(query: str, success: bool):
@@ -357,12 +1057,29 @@ def show_connection_status():
 
 def render_footer():
     """Render page footer."""
-    st.divider()
+    st.markdown(
+        '<div style="margin: 3rem 0 1rem 0;"><hr style="border: 1px solid var(--vault-border);"></div>',
+        unsafe_allow_html=True,
+    )
     st.markdown(
         """
-    <div style='text-align: center; color: #666; font-size: 0.8em;'>
-    Vault PKI Query Agent | Built with Streamlit and AWS Strands Agent SDK<br>
-    ✨ Features real-time streaming responses and tool monitoring
+    <div style='
+        text-align: center;
+        color: var(--vault-text-muted);
+        font-size: 0.85rem;
+        padding: 1rem;
+        background-color: var(--vault-sidebar-bg);
+        border-radius: 8px;
+        border: 1px solid var(--vault-border);
+        margin: 1rem 0;
+    '>
+        <div style='margin-bottom: 0.5rem; font-weight: 500; color: var(--vault-text-secondary);'>
+            🔐 Vault PKI Query Agent
+        </div>
+        <div style='font-size: 0.8rem;'>
+            Built with Streamlit and AWS Strands Agent SDK<br>
+            ✨ Features real-time streaming responses and tool monitoring
+        </div>
     </div>
     """,
         unsafe_allow_html=True,

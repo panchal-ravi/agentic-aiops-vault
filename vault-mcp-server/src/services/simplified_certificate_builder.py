@@ -6,7 +6,7 @@ from Vault PKI data with the specific fields requested by the user.
 
 import asyncio
 import logging
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 from cryptography import x509
@@ -36,6 +36,8 @@ class SimplifiedCertificateBuilder:
       - expired: yes/no
       - revoked: yes/no
       - expiring_in: (no. of days) if not expired
+      - expired_date: expiration date (only if expired)
+      - revoked_date: revocation date (only if revoked)
       - issuers: [intermediate CA and root CA]
     """
 
@@ -326,6 +328,18 @@ class SimplifiedCertificateBuilder:
                             minutes = (total_seconds % 3600) // 60
                             expiring_in = f"{hours}h {minutes}m"
 
+                    # Format expired date if certificate is expired
+                    expired_date = None
+                    if is_expired:
+                        expired_date = not_after.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+                    # Format revoked date if certificate is revoked
+                    revoked_date = None
+                    if is_revoked and revocation_time:
+                        # Convert timestamp to datetime
+                        revoked_datetime = datetime.fromtimestamp(revocation_time, tz=UTC)
+                        revoked_date = revoked_datetime.strftime("%Y-%m-%d %H:%M:%S UTC")
+
                     # Get issuer chain from issuer_id
                     issuer_id = cert_data.get("issuer_id")
                     # If no issuer_id, try to get default issuer from PKI config
@@ -345,7 +359,8 @@ class SimplifiedCertificateBuilder:
                         cert.serial_number
                     )
 
-                    return {
+                    # Build the result dictionary
+                    result = {
                         "serial_number": serial_formatted,
                         "subject_cn": subject_cn,
                         "expired": expired,
@@ -353,6 +368,16 @@ class SimplifiedCertificateBuilder:
                         "expiring_in": expiring_in,
                         "issuers": issuers,
                     }
+
+                    # Add expired date if certificate is expired
+                    if expired_date:
+                        result["expired_date"] = expired_date
+
+                    # Add revoked date if certificate is revoked
+                    if revoked_date:
+                        result["revoked_date"] = revoked_date
+
+                    return result
 
                 except VaultPermissionError as e:
                     warnings.append(
