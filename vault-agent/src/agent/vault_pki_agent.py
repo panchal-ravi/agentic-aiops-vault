@@ -74,11 +74,6 @@ When responding:
 
 **IMPORTANT: Format all structured data in markdown tables for better readability.**
 
-Example table format:
-| Serial Number | Subject | Expiration Date | Status | PKI Engine |
-|---------------|---------|-----------------|--------|------------|
-| 12:34:56:... | CN=example.com | 2024-12-31 | Active | pki-prod |
-
 For certificate expiration queries, use list_certificates on all PKI engines and filter results.
 For revocation queries, use list_certificates and look for revoked certificates.
 For audit queries, use filter_pki_audit_events with the certificate subject and PKI path.

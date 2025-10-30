@@ -101,6 +101,19 @@ def setup_page_config():
     .stSidebar div,
     .stSidebar span {
         color: var(--vault-text-primary) !important;
+        background-color: transparent !important;
+    }
+    
+    /* Arc browser specific fixes for sidebar text */
+    [data-testid="stSidebar"] *,
+    [data-testid="stSidebar"] div,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: var(--vault-text-primary) !important;
+        background-color: transparent !important;
     }
     
     /* Main content area - white background */
@@ -211,20 +224,30 @@ def setup_page_config():
         background-color: rgba(21, 99, 255, 0.05) !important;
     }
     
-    /* Sidebar buttons with white background */
-    .stSidebar .stButton > button {
-        background-color: #f8fafc !important;
-        border: 1px solid var(--vault-border) !important;
-        color: var(--vault-text-primary) !important;
+    /* Sidebar buttons with light blue gradient background - maximum specificity */
+    [data-testid="stSidebar"] button[kind="secondary"],
+    [data-testid="stSidebar"] .stButton > button,
+    [data-testid="stSidebar"] button {
+        background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%) !important;
+        border: 1px solid #bfdbfe !important;
+        color: #1e293b !important;
         width: 100% !important;
         font-family: 'Noto Sans', sans-serif !important;
-        font-weight: 400 !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 8px !important;
     }
     
-    .stSidebar .stButton > button:hover {
-        background-color: var(--vault-primary) !important;
-        border-color: var(--vault-primary) !important;
-        color: white !important;
+    [data-testid="stSidebar"] button[kind="secondary"]:hover,
+    [data-testid="stSidebar"] .stButton > button:hover,
+    [data-testid="stSidebar"] button:hover {
+        background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%) !important;
+        border-color: #60a5fa !important;
+        color: #0f172a !important;
+        transform: translateX(2px) !important;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2) !important;
     }
     
     /* Data frames and tables */
@@ -424,14 +447,39 @@ def setup_page_config():
     }
     
     /* Hide Streamlit branding - but preserve sidebar toggle */
-    #MainMenu .css-14xtw13.e8zbici0 {visibility: hidden;} /* Hide main menu items but not sidebar toggle */
+    #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    .css-1dp5vir {visibility: hidden;} /* Hide "Made with Streamlit" */
+    header {visibility: visible !important;}
     
-    /* Ensure sidebar toggle remains visible */
-    button[kind="header"] {visibility: visible !important;}
-    [data-testid="collapsedControl"] {visibility: visible !important;}
-    .css-1lcbmhc.e1fqkh3o0 {visibility: visible !important;}
+    /* Ensure sidebar toggle icon displays correctly */
+    button[kind="header"] {
+        visibility: visible !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    [data-testid="collapsedControl"] {
+        visibility: visible !important;
+        display: flex !important;
+    }
+    
+    [data-testid="collapsedControl"] svg {
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* Hide text, show only icon */
+    button[kind="header"] span[data-testid="stHeaderActionElements"] {
+        font-size: 0 !important;
+    }
+    
+    button[kind="header"] svg {
+        display: block !important;
+        visibility: visible !important;
+        width: 1.5rem !important;
+        height: 1.5rem !important;
+    }
     
     /* Custom animation for loading states */
     @keyframes pulse {
@@ -763,7 +811,7 @@ def render_query_input() -> Optional[str]:
             "Enter your question about Vault PKI:",
             value=prompt_text,
             placeholder="e.g., Show me all certificates expiring in next 30 days",
-            help="Type your question in natural language and press Enter to submit. In streaming mode, you'll see real-time responses and tool usage.",
+            help="Type your question in natural language and press Enter or click Query to submit. In streaming mode, you'll see real-time responses and tool usage.",
             label_visibility="collapsed",
         )
 
@@ -777,15 +825,17 @@ def render_query_input() -> Optional[str]:
         with col2:
             clear_clicked = st.form_submit_button("🗑️ Clear", use_container_width=True)
 
-    # Handle clear button outside the form to avoid form submission conflicts
-    if clear_clicked:
-        # Clear the session state for selected prompt
-        if "selected_prompt" in st.session_state:
-            del st.session_state.selected_prompt
-        st.rerun()
+        # Handle form submission - the form submits when ANY button is clicked or Enter is pressed
+        # We need to check which button was clicked
+        if clear_clicked:
+            # Clear the session state for selected prompt
+            if "selected_prompt" in st.session_state:
+                del st.session_state.selected_prompt
+            st.rerun()
+            return None
 
-    if submit_clicked and query_text.strip():
-        return query_text.strip()
+        if submit_clicked and query_text.strip():
+            return query_text.strip()
 
     return None
 

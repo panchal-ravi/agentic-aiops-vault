@@ -53,12 +53,21 @@ vault write pki_int/roles/example-dot-com \
 vault write pki_int/issue/example-dot-com common_name="test.example.com" ttl="24h"
 vault write pki_int/issue/example-dot-com common_name="api.example.com" ttl="720h"
 vault write pki_int/issue/example-dot-com common_name="web.example.com" ttl="240h"
+vault write pki_int/issue/example-dot-com common_name="hashi.example.com" ttl="24h"
+vault write pki_int/issue/example-dot-com common_name="hackathon.example.com" ttl="24h"
 ```
 ## Revoke certificate
 ```
 vault list pki_int/certs
 vault write pki_int/revoke serial_number="61:f6:7a:dd:71:d2:1c:c0:40:2e:58:cd:ef:d9:cb:6e:15:38:10:08"
 ```
+
+### Create Vault policy
+vault policy write "read-and-list-all" - <<EOF
+path "*" {
+  capabilities = ["list", "read"]
+}
+EOF
 
 ## List certs and issuers
 ```
@@ -109,7 +118,7 @@ curl -s \
   -H "X-Vault-Namespace: admin" \
   -H "X-Vault-Request: true" \
   -X POST \
-  -d '{"input": "test.example.com"}' \
+  -d '{"input": "61:f6:7a:dd:71:d2:1c:c0:40:2e:58:cd:ef:d9:cb:6e:15:38:10:08"}' \
   $VAULT_ADDR/v1/sys/audit-hash/hcp-main-audit
 ```
 
@@ -121,3 +130,11 @@ curl -s \
 
 { (($.request.path = "pki_int/revoke") && ($.request.data.serial_number = "hmac-sha256:77457198eb4b4ffbecc499d0c6db0e9cce4020b994e5ef383e622e94a63877f8") && ($.auth.entity_id != "") && ($.response.mount_type = "pki")) || (($.request.path = "pki_int/issue/*") && ($.response.data.serial_number = "hmac-sha256:77457198eb4b4ffbecc499d0c6db0e9cce4020b994e5ef383e622e94a63877f8") && ($.auth.entity_id != ""))}
 ```
+
+
+
+List all certificates issued by example.com
+Tell me who revoked test.example.com
+List all certificates expiring in 30 days
+List all expired certificates
+List all revoked certificates
